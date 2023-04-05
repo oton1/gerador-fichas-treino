@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { saveWorkoutPlan } from './getApi.js';
 import { getWorkoutPlan } from './getPlans.js';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 function App() {
   const [workoutPlan, setWorkoutPlan] = useState([]);
   const [exerciseName, setExerciseName] = useState('');
   const [exerciseReps, setExerciseReps] = useState('');
   const [exerciseSeries, setExerciseSeries] = useState('');
+  const workoutPlanRef = useRef(null);
 
   useEffect(() => {
     const fetchWorkoutPlan = async () => {
@@ -35,6 +38,18 @@ function App() {
     await saveWorkoutPlan(newWorkoutPlan);
   };
 
+  function handleExportPDF () {
+    const input = workoutPlanRef.current;
+    
+    html2canvas(input).then((canvas) => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF();
+      pdf.addImage(imgData, 'PNG', 0, 0);
+      pdf.save('treino{fulano}.pdf');
+    });
+  }
+
+
   return (
     <div>
       <h1>Workout Planner</h1>
@@ -57,7 +72,8 @@ function App() {
         onChange={(event) => setExerciseSeries(event.target.value)}
       />
       <button onClick={handleAddExercise}>Adicionar exercício</button>
-      <ul>
+      <button onClick={handleExportPDF}>Exportar arquivo como PDF</button>
+      <ul ref={workoutPlanRef}>
         {workoutPlan.map((exercise, index) => (
           <li key={index}>
             {exercise.name} - {exercise.reps} reps - {exercise.series} series
