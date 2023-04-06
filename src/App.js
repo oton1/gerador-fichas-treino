@@ -3,6 +3,7 @@ import { saveWorkoutPlan } from './getApi.js';
 import { getWorkoutPlan } from './getPlans.js';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import workoutPlanModule from './workplanmodule.js';
 
 function App() {
   const [workoutPlan, setWorkoutPlan] = useState([]);
@@ -13,11 +14,16 @@ function App() {
 
   useEffect(() => {
     const fetchWorkoutPlan = async () => {
-      const workoutPlan = await getWorkoutPlan();
-      setWorkoutPlan(workoutPlan);
+      const storedWorkoutPlan = localStorage.getItem('workoutPlan');
+      if (storedWorkoutPlan) {
+        setWorkoutPlan(JSON.parse(storedWorkoutPlan));
+      } else {
+        const workoutPlan = await getWorkoutPlan();
+        setWorkoutPlan(workoutPlan);
+      }
     };
-
     fetchWorkoutPlan();
+
   }, []);
 
   const handleAddExercise = async () => {
@@ -35,9 +41,16 @@ function App() {
     setExerciseReps('');
     setExerciseSeries('');
     // Save the new workout plan to the API
+    localStorage.setItem('workoutPlan', JSON.stringify(newWorkoutPlan));
+  };
+  
+  const handleRemoveExercise = async (index) => {
+    const newWorkoutPlan = [...workoutPlan];
+    newWorkoutPlan.splice(index, 1);
+    setWorkoutPlan(newWorkoutPlan);
     await saveWorkoutPlan(newWorkoutPlan);
   };
-
+  
   function handleExportPDF () {
     const input = workoutPlanRef.current;
     
@@ -52,7 +65,7 @@ function App() {
 
   return (
     <div>
-      <h1>Workout Planner</h1>
+      <h1>Gerador de Fichas</h1>
       <input
         type="text"
         placeholder="Coloque o nome do exercício"
@@ -77,11 +90,11 @@ function App() {
         {workoutPlan.map((exercise, index) => (
           <li key={index}>
             {exercise.name} - {exercise.reps} reps - {exercise.series} series
+            <button onClick={() => handleRemoveExercise(index)}>Remover exercício</button>
           </li>
         ))}
       </ul>
     </div>
   );
 }
-
 export default App;
